@@ -1,0 +1,27 @@
+{
+  "name": "job-hunter-ai",
+  "version": "1.0.0",
+  "description": "Autonomous AI Job & Part-Time WFH Gig Hunter with Direct ATS Apply Links, HR Cold Outreach & Daily Automation",
+  "main": "server/src/index.ts",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan.bold,green.bold\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build && npm --prefix server run build",
+    "start": "npm --prefix server run start"
+  },
+  "keywords": [
+    "job-hunter",
+    "ats-scraper",
+    "part-time-gigs",
+    "wfh-jobs",
+    "cold-email",
+    "career-copilot",
+    "antigravity"
+  ],
+  "author": "Yasharth Singhal",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
