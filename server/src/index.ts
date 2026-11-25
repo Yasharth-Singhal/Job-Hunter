@@ -81,4 +81,17 @@ app.listen(Number(PORT), '0.0.0.0', () => {
   AutomationService.initScheduler();
   // Start interactive Telegram long polling (for local or cloud instance without webhook)
   TelegramBotService.startPolling();
+
+  // Keep-Alive Self-Ping: Prevents Render free tier from sleeping after 15 minutes of inactivity
+  const cloudUrl = process.env.RENDER_EXTERNAL_URL || 'https://job-hunter-ai-nzwc.onrender.com';
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+    setInterval(() => {
+      import('axios').then(({ default: axios }) => {
+        axios.get(`${cloudUrl}/api/health`, { timeout: 10000 })
+          .then(() => console.log('[KeepAlive] Sent self-ping to keep Render awake'))
+          .catch((err) => console.log('[KeepAlive] Self-ping note:', err.message));
+      }).catch(() => {});
+    }, 10 * 60 * 1000); // 10 minutes
+    console.log(`[KeepAlive] Scheduled self-ping daemon every 10 minutes for ${cloudUrl}`);
+  }
 });
