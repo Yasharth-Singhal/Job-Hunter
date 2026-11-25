@@ -729,11 +729,16 @@ export class TelegramBotService {
       };
     }
 
+    const profile = StoreService.getProfile();
+    const fitTier = job.matchScore >= 90 ? '🔥 VIP Match' : job.matchScore >= 80 ? '⭐ Strong Fit' : '✅ Good Match';
+
     let text = `💼 <b>${job.title}</b>\n`;
     text += `🏢 <b>Company:</b> ${job.company}\n`;
     text += `💰 <b>Salary / CTC:</b> ${job.salary || 'Competitive / Market Standard'}\n`;
     text += `📍 <b>Location:</b> ${job.location} (${job.workplaceType.toUpperCase()})\n`;
-    text += `🎯 <b>ATS Resume Fit Score:</b> <b>${job.matchScore}%</b>\n`;
+    text += `🎯 <b>Profile Match:</b> <b>${job.matchScore}% [${fitTier}]</b>\n`;
+    text += `👤 <b>Calibrated For:</b> ${profile.name} (${profile.experienceLevel})\n`;
+    text += `⚡ <b>Core Stack Overlap:</b> ${profile.coreSkills.slice(0, 5).join(', ')}\n`;
     text += `🏛️ <b>Verified Direct Portal:</b> ${job.source.toUpperCase()}\n`;
     text += `📅 <b>Posted:</b> ${job.postedAt || 'Recently'}\n\n`;
     text += `🔗 <b>Official Apply Link:</b> <a href="${job.directApplyUrl}">Click Here to Open Direct Application ↗️</a>\n\n`;

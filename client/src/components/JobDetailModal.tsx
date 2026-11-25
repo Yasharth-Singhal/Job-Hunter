@@ -100,6 +100,34 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   {job.location}
                 </span>
               </div>
+
+              {/* Resume & Profile Match Banner */}
+              <div className="mt-3 p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-emerald-400 font-mono">{job.matchScore}% Match</span>
+                    <span className="text-xs text-zinc-300 font-medium">with {profile?.name || 'Your Profile'}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
+                      {job.matchScore >= 90 ? '🔥 High Probability Interview Call' : 'Solid Profile Alignment'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Calculated from your tech stack ({profile?.coreSkills?.slice(0, 5).join(', ')}), {profile?.experienceLevel || 'Junior'} experience tier, and target roles.
+                  </p>
+                </div>
+                <div className="w-full sm:w-48 shrink-0">
+                  <div className="flex justify-between text-[10px] text-zinc-500 mb-1 font-mono">
+                    <span>ATS Readiness</span>
+                    <span className="text-emerald-400 font-bold">{job.matchScore}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                      style={{ width: `${job.matchScore}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">

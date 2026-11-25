@@ -215,6 +215,33 @@ export const JobCard: React.FC<JobCardProps> = ({
                   </>
                 )}
               </div>
+
+              {/* Resume & Profile Match Percentage Bar */}
+              <div className="mt-2.5 p-2 rounded-lg bg-zinc-950/80 border border-zinc-800/80">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="font-medium text-zinc-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span><b>{job.matchScore}%</b> Match with {profile?.name || 'Your Profile'}</span>
+                  </span>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                    job.matchScore >= 90 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                    job.matchScore >= 80 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                    'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {job.matchScore >= 90 ? 'VIP Match' : job.matchScore >= 80 ? 'Strong Fit' : 'Good Fit'}
+                  </span>
+                </div>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      job.matchScore >= 90 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                      job.matchScore >= 80 ? 'bg-gradient-to-r from-cyan-500 to-blue-400' :
+                      'bg-gradient-to-r from-amber-500 to-yellow-400'
+                    }`}
+                    style={{ width: `${job.matchScore}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
