@@ -474,15 +474,28 @@ export const App: React.FC = () => {
     if (jobsSubFilter === 'bookmarked' && !bookmarkedMap.has(job.id)) return false;
     if (jobsSubFilter === 'will-apply' && !willApplyMap.has(job.id)) return false;
 
-    const matchesSearch = searchQuery === '' || 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const cleanQ = searchQuery.toLowerCase().trim();
+    const matchesSearch = cleanQ === '' || 
+      job.title.toLowerCase().includes(cleanQ) ||
+      job.company.toLowerCase().includes(cleanQ) ||
+      job.location.toLowerCase().includes(cleanQ) ||
+      (job.requirements && job.requirements.some(r => r.toLowerCase().includes(cleanQ))) ||
+      (job.descriptionSnippet && job.descriptionSnippet.toLowerCase().includes(cleanQ));
 
     const matchesSource = selectedSource === 'all' || job.source === selectedSource;
     const matchesScore = job.matchScore >= minScore;
     const matchesWorkplace = selectedWorkplace === 'all' || job.workplaceType === selectedWorkplace;
-    const matchesExperience = selectedExperience === 'all' || job.experienceLevel === selectedExperience;
+
+    let matchesExperience = true;
+    if (selectedExperience === 'fresher') {
+      matchesExperience = job.experienceLevel === 'fresher' || /fresher|intern|entry|0-1|associate|graduate/i.test(job.title + ' ' + (job.descriptionSnippet || ''));
+    } else if (selectedExperience === 'junior') {
+      matchesExperience = job.experienceLevel === 'junior' || /junior|jr\.|sde 1|sde-1|1-2|1-3|software engineer 1|frontend developer|full stack/i.test(job.title + ' ' + (job.descriptionSnippet || ''));
+    } else if (selectedExperience === 'mid-senior') {
+      matchesExperience = job.experienceLevel === 'mid-senior' || /senior|sr\.|lead|principal|staff|3\+|5\+/i.test(job.title + ' ' + (job.descriptionSnippet || ''));
+    } else if (selectedExperience !== 'all') {
+      matchesExperience = job.experienceLevel === selectedExperience;
+    }
 
     let matchesLocation = true;
     if (selectedLocation === 'nearby') {
@@ -763,6 +776,34 @@ export const App: React.FC = () => {
                 >
                   <span>🔔 Set Alert Rule</span>
                 </button>
+              </div>
+
+              {/* Quick Tech Stack & Role Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-800/60">
+                <span className="text-[11px] text-zinc-500 font-mono pr-1">⚡ Quick Filter:</span>
+                {['React', 'Next.js', 'Node.js', 'TypeScript', 'Full Stack', 'Frontend', 'Python', 'AWS', 'Docker'].map((tech) => (
+                  <button
+                    key={tech}
+                    type="button"
+                    onClick={() => setSearchQuery(searchQuery === tech ? '' : tech)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
+                      searchQuery === tech
+                        ? 'bg-emerald-500 text-zinc-950 font-bold'
+                        : 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60'
+                    }`}
+                  >
+                    {tech}
+                  </button>
+                ))}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="text-[11px] text-zinc-400 hover:text-red-400 underline ml-1"
+                  >
+                    Clear Filter
+                  </button>
+                )}
               </div>
             </div>
 

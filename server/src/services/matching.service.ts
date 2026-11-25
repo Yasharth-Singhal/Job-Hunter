@@ -20,6 +20,26 @@ export class MatchingService {
       reasons.push('Title aligns with your target career track');
     }
 
+    // Experience Tier Calibration based on candidate's profile
+    const expStr = (profile.experienceLevel || '').toLowerCase();
+    const isSeniorJob = /senior|sr\.|lead|principal|staff|architect|director|vp|head of/i.test(job.title);
+    const isJuniorJob = /junior|jr\.|associate|entry|intern|graduate|sde 1|sde i|software engineer 1|developer 1|frontend developer|full stack engineer/i.test(job.title);
+
+    if (expStr.includes('junior') || expStr.includes('1-2') || expStr.includes('fresher') || expStr.includes('0-1')) {
+      if (isJuniorJob) {
+        score += 12;
+        reasons.push('Ideal experience match for Junior / SDE-1 level');
+      } else if (isSeniorJob) {
+        score -= 8;
+        reasons.push('High seniority role (Requires 5+ years)');
+      }
+    } else if (expStr.includes('senior') || expStr.includes('5+')) {
+      if (isSeniorJob) {
+        score += 14;
+        reasons.push('Aligned with your Senior / Lead background');
+      }
+    }
+
     // 2. Core Skills Matching
     let matchedSkillsCount = 0;
     for (const skill of profile.coreSkills) {

@@ -143,6 +143,7 @@ export class TelegramBotService {
       { command: 'jobs', description: '💼 Browse All Verified Jobs' },
       { command: 'topjobs', description: '🔥 Top 3 Highest Match Jobs (95%+)' },
       { command: 'remote', description: '🏠 100% Remote / WFH Jobs' },
+      { command: 'junior', description: '🎓 Early Career & Junior Roles (0-2 Yrs)' },
       { command: 'mnc', description: '🏛️ Big Tech & MNC Portals' },
       { command: 'search', description: '🔍 Search by Keyword: /search react' },
       { command: 'gigs', description: '💰 High-Payout WFH Side Gigs' },
@@ -1802,6 +1803,13 @@ export class TelegramBotService {
         if (text === '/mnc') {
           const { text: mncText, markup } = this.getMncJobsContent();
           await this.sendMenu(chatId, mncText, markup);
+          return;
+        }
+
+        // Command: /junior or /fresher
+        if (text === '/junior' || text === '/fresher' || text === '/early') {
+          const { text: jText, markup } = this.searchJobsContent('engineer');
+          await this.sendMenu(chatId, `🎓 <b>Junior & Early Career Openings (0-2 Yrs):</b>\n\n` + jText, markup);
           return;
         }
 
