@@ -41,7 +41,7 @@ export class TelegramBotService {
 
   private static getBotToken(): string {
     const auto = StoreService.getAutomation();
-    return auto?.telegramBotToken || '9233664453:AAGU7w4GUhsXyLM1weCEl1N8qK39iEeFNSs';
+    return process.env.TELEGRAM_BOT_TOKEN || auto?.telegramBotToken || '';
   }
 
   private static getApiUrl(method: string): string {

@@ -5,8 +5,8 @@ import { StoreService } from './store.service.js';
 export class TelegramService {
   private static getCredentials() {
     const auto = StoreService.getAutomation();
-    const token = auto?.telegramBotToken || '9233664453:AAGU7w4GUhsXyLM1weCEl1N8qK39iEeFNSs';
-    const chatId = auto?.telegramChatId || '6817458694';
+    const token = process.env.TELEGRAM_BOT_TOKEN || auto?.telegramBotToken || '';
+    const chatId = process.env.TELEGRAM_CHAT_ID || auto?.telegramChatId || '';
     return { token, chatId, enabled: auto?.telegramEnabled ?? true };
   }
 

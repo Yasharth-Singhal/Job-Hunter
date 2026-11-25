@@ -164,8 +164,8 @@ const DEFAULT_AUTOMATION: AutomationSettings = {
   autoDraftColdEmails: true,
   lastRun: undefined,
   nextRun: 'Tomorrow at 09:00 AM',
-  telegramBotToken: '9233664453:AAGU7w4GUhsXyLM1weCEl1N8qK39iEeFNSs',
-  telegramChatId: '6817458694',
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
+  telegramChatId: process.env.TELEGRAM_CHAT_ID || '',
   telegramEnabled: true
 };
 
