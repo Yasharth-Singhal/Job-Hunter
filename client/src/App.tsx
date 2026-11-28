@@ -23,7 +23,8 @@ import {
   Bookmark,
   Send,
   Plus,
-  Flame
+  Flame,
+  RefreshCw
 } from 'lucide-react';
 import { Job, Gig, ResumeProfile, TrackedApplication, AutomationSettings, UserAccount } from './types';
 import { Navbar } from './components/Navbar';
@@ -80,6 +81,12 @@ export const App: React.FC = () => {
   // Filters for gigs
   const [gigCategory, setGigCategory] = useState<string>('all');
   const [onlyMatchedGigs, setOnlyMatchedGigs] = useState<boolean>(false);
+
+  // Pagination
+  const [jobsPage, setJobsPage] = useState<number>(1);
+  const [gigsPage, setGigsPage] = useState<number>(1);
+  const JOBS_PER_PAGE = 20;
+  const GIGS_PER_PAGE = 12;
 
   // Bulk Selection & Comparison
   const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set());
@@ -525,6 +532,23 @@ export const App: React.FC = () => {
     return matchesSearch && matchesCat && matchesProfile;
   });
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setJobsPage(1);
+  }, [searchQuery, selectedSource, minScore, selectedWorkplace, selectedExperience, selectedLocation, jobsSubFilter]);
+
+  useEffect(() => {
+    setGigsPage(1);
+  }, [searchQuery, gigCategory, onlyMatchedGigs]);
+
+  const totalJobsPages = Math.max(1, Math.ceil(filteredJobs.length / JOBS_PER_PAGE));
+  const safeJobsPage = Math.min(jobsPage, totalJobsPages);
+  const paginatedJobs = filteredJobs.slice((safeJobsPage - 1) * JOBS_PER_PAGE, safeJobsPage * JOBS_PER_PAGE);
+
+  const totalGigsPages = Math.max(1, Math.ceil(filteredGigs.length / GIGS_PER_PAGE));
+  const safeGigsPage = Math.min(gigsPage, totalGigsPages);
+  const paginatedGigs = filteredGigs.slice((safeGigsPage - 1) * GIGS_PER_PAGE, safeGigsPage * GIGS_PER_PAGE);
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-zinc-950 text-zinc-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Notification */}
@@ -688,8 +712,18 @@ export const App: React.FC = () => {
                 </button>
               </div>
 
-              <div className="text-[11px] text-zinc-500 font-mono">
-                Showing {filteredJobs.length} matching openings (Unlimited)
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-zinc-400 font-mono">
+                  Page {safeJobsPage} of {totalJobsPages} ({filteredJobs.length} openings)
+                </span>
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span>{isRefreshing ? 'Scanning Live Portals...' : 'Refresh & Scan New'}</span>
+                </button>
               </div>
             </div>
 
@@ -879,7 +913,7 @@ export const App: React.FC = () => {
 
                 {/* Job Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredJobs.map((job) => (
+                  {paginatedJobs.map((job) => (
                     <JobCard
                       key={job.id}
                       job={job}
@@ -907,6 +941,34 @@ export const App: React.FC = () => {
                     />
                   ))}
                 </div>
+
+                {/* Jobs Pagination Bar */}
+                {totalJobsPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-800/80">
+                    <div className="text-xs text-zinc-400 font-mono">
+                      Showing {(safeJobsPage - 1) * JOBS_PER_PAGE + 1}–{Math.min(safeJobsPage * JOBS_PER_PAGE, filteredJobs.length)} of {filteredJobs.length} jobs
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => { setJobsPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        disabled={safeJobsPage === 1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 disabled:opacity-40 transition-all"
+                      >
+                        ⬅️ Prev
+                      </button>
+                      <span className="px-3 py-1.5 rounded-lg text-xs font-mono bg-zinc-900 border border-zinc-800 text-emerald-400 font-bold">
+                        Page {safeJobsPage} / {totalJobsPages}
+                      </span>
+                      <button
+                        onClick={() => { setJobsPage(p => Math.min(totalJobsPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        disabled={safeJobsPage === totalJobsPages}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 disabled:opacity-40 transition-all"
+                      >
+                        Next ➡️
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -929,17 +991,28 @@ export const App: React.FC = () => {
                   />
                 </div>
 
-                {/* Match toggle */}
-                <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={onlyMatchedGigs}
-                    onChange={(e) => setOnlyMatchedGigs(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-emerald-500 rounded"
-                  />
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Matched with My Profile Interests</span>
-                </label>
+                {/* Match toggle & Refresh */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={onlyMatchedGigs}
+                      onChange={(e) => setOnlyMatchedGigs(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-emerald-500 rounded"
+                    />
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Matched with My Profile Interests</span>
+                  </label>
+
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span>{isRefreshing ? 'Fetching Live Gigs...' : 'Refresh & Fetch New Gigs'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Diverse Category Pills */}
@@ -992,16 +1065,46 @@ export const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredGigs.map((gig) => (
-                  <GigCard
-                    key={gig.id}
-                    gig={gig}
-                    onTrack={handleTrackGig}
-                    onOpenProposal={(g) => setSelectedGigForProposal(g)}
-                    isTracked={willApplyMap.has(gig.id) || appliedMap.has(gig.id)}
-                  />
-                ))}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedGigs.map((gig) => (
+                    <GigCard
+                      key={gig.id}
+                      gig={gig}
+                      onTrack={handleTrackGig}
+                      onOpenProposal={(g) => setSelectedGigForProposal(g)}
+                      isTracked={willApplyMap.has(gig.id) || appliedMap.has(gig.id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Gigs Pagination Bar */}
+                {totalGigsPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-800/80">
+                    <div className="text-xs text-zinc-400 font-mono">
+                      Showing {(safeGigsPage - 1) * GIGS_PER_PAGE + 1}–{Math.min(safeGigsPage * GIGS_PER_PAGE, filteredGigs.length)} of {filteredGigs.length} gigs
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => { setGigsPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        disabled={safeGigsPage === 1}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 disabled:opacity-40 transition-all"
+                      >
+                        ⬅️ Prev
+                      </button>
+                      <span className="px-3 py-1.5 rounded-lg text-xs font-mono bg-zinc-900 border border-zinc-800 text-emerald-400 font-bold">
+                        Page {safeGigsPage} / {totalGigsPages}
+                      </span>
+                      <button
+                        onClick={() => { setGigsPage(p => Math.min(totalGigsPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        disabled={safeGigsPage === totalGigsPages}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 disabled:opacity-40 transition-all"
+                      >
+                        Next ➡️
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
