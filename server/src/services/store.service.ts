@@ -17,6 +17,7 @@ import {
 interface StorageData {
   profiles: ResumeProfile[];
   activeProfileId: string;
+  userActiveProfileMap?: Record<string, string>;
   applications: TrackedApplication[];
   notInterestedJobIds: string[];
   savedJobs: Job[];
@@ -37,8 +38,35 @@ const DATA_DIR = path.join(ROOT_DIR, 'data');
 const RESUMES_DIR = path.join(DATA_DIR, 'resumes');
 const DATA_FILE = path.join(DATA_DIR, 'storage.json');
 
+const GUEST_PROFILE: ResumeProfile = {
+  id: 'profile_guest',
+  profileName: 'Guest Candidate (Sign In to Personalize)',
+  fileName: 'Sample_Resume.pdf',
+  filePath: '',
+  uploadedAt: new Date().toISOString(),
+  name: 'Guest Candidate',
+  email: 'Sign in with Gmail to sync',
+  phone: '',
+  location: 'India / Remote',
+  targetRoles: ['Software Engineer', 'Full Stack Developer', 'Frontend Developer'],
+  coreSkills: ['JavaScript', 'TypeScript', 'React.js', 'Node.js', 'SQL'],
+  extracurriculars: [],
+  interests: ['Web Development', 'Cloud'],
+  minHourlyRate: 20,
+  githubUrl: '',
+  linkedinUrl: '',
+  portfolioUrl: '',
+  resumeSummary: 'Sign in or upload your resume to see personalized ATS match percentages and custom interview prep.',
+  resumeText: '',
+  experienceLevel: 'Junior (1-2 yrs)',
+  preferredWorkplace: 'all',
+  preferredLocation: 'all',
+  collegeName: ''
+};
+
 const DEFAULT_PROFILE: ResumeProfile = {
   id: 'profile_default',
+  ownerEmail: 'yashsinghal6244@gmail.com',
   profileName: 'Yasharth Singhal - Full Stack Engineer',
   fileName: 'Yasharth_Singhal_Resume.pdf',
   filePath: '',
@@ -342,6 +370,140 @@ export class StoreService {
     data.profiles = data.profiles.filter(p => p.id !== profileId);
     if (data.activeProfileId === profileId) {
       data.activeProfileId = data.profiles[0].id;
+    }
+    this.saveData();
+    return true;
+  }
+
+  // --- User-Scoped Profile & Resume Isolation ---
+  private static isYasharthUser(user?: UserAccount | null): boolean {
+    return !!user && user.email.toLowerCase() === 'yashsinghal6244@gmail.com';
+  }
+
+  public static getProfilesForUser(user?: UserAccount | null): ResumeProfile[] {
+    if (!user) return [];
+    const data = this.readData();
+    const isOwnerAdmin = this.isYasharthUser(user);
+    return (data.profiles || []).filter(p => {
+      if (p.ownerId && p.ownerId === user.id) return true;
+      if (p.ownerEmail && p.ownerEmail.toLowerCase() === user.email.toLowerCase()) return true;
+      // Legacy default profiles belong strictly to Yasharth's account
+      if (isOwnerAdmin && (!p.ownerId && !p.ownerEmail)) return true;
+      return false;
+    });
+  }
+
+  public static getActiveProfileForUser(user?: UserAccount | null): ResumeProfile {
+    if (!user) return GUEST_PROFILE;
+    const userProfiles = this.getProfilesForUser(user);
+    if (userProfiles.length === 0) {
+      // Auto-create a clean personal profile for newly logged-in user
+      return this.createProfileForUser({
+        profileName: `${user.name} - Resume Profile`,
+        fileName: 'My_Resume.pdf',
+        filePath: '',
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        location: 'India / Remote',
+        targetRoles: ['Software Engineer', 'Full Stack Developer'],
+        coreSkills: ['JavaScript', 'React.js', 'Node.js', 'SQL'],
+        extracurriculars: [],
+        interests: ['Software Engineering'],
+        minHourlyRate: 20,
+        githubUrl: '',
+        linkedinUrl: '',
+        portfolioUrl: '',
+        resumeSummary: `Candidate profile for ${user.name} (${user.collegeName || 'Engineering'}). Upload your resume PDF to calibrate ATS scores.`,
+        resumeText: '',
+        experienceLevel: 'Junior (1-2 yrs)',
+        preferredWorkplace: 'all',
+        preferredLocation: 'all',
+        collegeName: user.collegeName
+      }, user);
+    }
+
+    const data = this.readData();
+    const mappedId = data.userActiveProfileMap?.[user.id];
+    const active = mappedId ? userProfiles.find(p => p.id === mappedId) : undefined;
+    return active || userProfiles[0];
+  }
+
+  public static setActiveProfileForUser(profileId: string, user?: UserAccount | null): ResumeProfile | null {
+    if (!user) return null;
+    const userProfiles = this.getProfilesForUser(user);
+    const target = userProfiles.find(p => p.id === profileId);
+    if (!target) return null;
+
+    const data = this.readData();
+    if (!data.userActiveProfileMap) data.userActiveProfileMap = {};
+    data.userActiveProfileMap[user.id] = target.id;
+    if (this.isYasharthUser(user)) {
+      data.activeProfileId = target.id;
+    }
+    this.saveData();
+    return target;
+  }
+
+  public static createProfileForUser(
+    profileData: Omit<ResumeProfile, 'id' | 'uploadedAt'>,
+    user?: UserAccount | null
+  ): ResumeProfile {
+    if (!user) {
+      // Guest uploads create a temporary in-memory/scoped profile without leaking into Yasharth's list
+      return {
+        ...profileData,
+        id: 'profile_guest_' + Date.now(),
+        uploadedAt: new Date().toISOString()
+      };
+    }
+    const data = this.readData();
+    const newProfile: ResumeProfile = {
+      ...profileData,
+      ownerId: user.id,
+      ownerEmail: user.email.toLowerCase(),
+      id: 'profile_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      uploadedAt: new Date().toISOString()
+    };
+    data.profiles.unshift(newProfile);
+    if (!data.userActiveProfileMap) data.userActiveProfileMap = {};
+    data.userActiveProfileMap[user.id] = newProfile.id;
+    if (this.isYasharthUser(user)) {
+      data.activeProfileId = newProfile.id;
+    }
+    this.saveData();
+    return newProfile;
+  }
+
+  public static updateActiveProfileForUser(
+    updates: Partial<ResumeProfile>,
+    user?: UserAccount | null
+  ): ResumeProfile {
+    if (!user) return { ...GUEST_PROFILE, ...updates };
+    const active = this.getActiveProfileForUser(user);
+    const data = this.readData();
+    const index = data.profiles.findIndex(p => p.id === active.id);
+    if (index !== -1) {
+      data.profiles[index] = { ...data.profiles[index], ...updates, ownerId: user.id, ownerEmail: user.email.toLowerCase() };
+      this.saveData();
+      return data.profiles[index];
+    }
+    return active;
+  }
+
+  public static deleteProfileForUser(profileId: string, user?: UserAccount | null): boolean {
+    if (!user) return false;
+    const userProfiles = this.getProfilesForUser(user);
+    if (userProfiles.length <= 1) return false;
+    const ownsTarget = userProfiles.some(p => p.id === profileId);
+    if (!ownsTarget) return false;
+
+    const data = this.readData();
+    data.profiles = data.profiles.filter(p => p.id !== profileId);
+    const remaining = this.getProfilesForUser(user);
+    if (!data.userActiveProfileMap) data.userActiveProfileMap = {};
+    if (data.userActiveProfileMap[user.id] === profileId && remaining.length > 0) {
+      data.userActiveProfileMap[user.id] = remaining[0].id;
     }
     this.saveData();
     return true;

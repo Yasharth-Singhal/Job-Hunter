@@ -107,13 +107,30 @@ export class AuthService {
 
     StoreService.saveUser(newUser);
 
-    // Update active profile name & college to match registered user
-    StoreService.updateActiveProfile({
+    // Create a clean personal profile & resume slot strictly for this newly registered user
+    StoreService.createProfileForUser({
+      profileName: `${newUser.name} - Resume Profile`,
+      fileName: 'My_Resume.pdf',
+      filePath: '',
       name: newUser.name,
       email: newUser.email,
-      collegeName: newUser.collegeName,
-      phone: newUser.phone
-    });
+      phone: newUser.phone || '',
+      location: 'India / Remote',
+      targetRoles: ['Software Engineer', 'Full Stack Developer'],
+      coreSkills: ['JavaScript', 'React.js', 'Node.js', 'SQL'],
+      extracurriculars: [],
+      interests: ['Software Engineering'],
+      minHourlyRate: 20,
+      githubUrl: '',
+      linkedinUrl: '',
+      portfolioUrl: '',
+      resumeSummary: `Candidate profile for ${newUser.name} (${newUser.collegeName}). Upload your resume PDF to calibrate ATS scores.`,
+      resumeText: '',
+      experienceLevel: 'Junior (1-2 yrs)',
+      preferredWorkplace: 'all',
+      preferredLocation: 'all',
+      collegeName: newUser.collegeName
+    }, newUser);
 
     const token = this.generateToken(newUser);
     return { user: newUser, token };

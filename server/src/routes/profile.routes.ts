@@ -1,18 +1,29 @@
-import { Router } from 'express';
+import { Router, Request } from 'express';
 import { StoreService } from '../services/store.service.js';
 import { AutomationService } from '../services/automation.service.js';
+import { AuthService } from '../services/auth.service.js';
+import { UserAccount } from '../types.js';
 
 export const profileRouter = Router();
 
+function getReqUser(req: Request): UserAccount | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  return AuthService.verifyToken(token);
+}
+
 profileRouter.get('/', (req, res) => {
   try {
-    const activeProfile = StoreService.getActiveProfile();
-    const profiles = StoreService.getProfiles();
+    const user = getReqUser(req);
+    const activeProfile = StoreService.getActiveProfileForUser(user);
+    const profiles = StoreService.getProfilesForUser(user);
     res.json({
       success: true,
       profile: activeProfile,
       profiles,
-      activeProfileId: activeProfile.id
+      activeProfileId: activeProfile.id,
+      isAuthenticated: !!user
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -21,8 +32,9 @@ profileRouter.get('/', (req, res) => {
 
 profileRouter.put('/', (req, res) => {
   try {
-    const updated = StoreService.updateActiveProfile(req.body);
-    const profiles = StoreService.getProfiles();
+    const user = getReqUser(req);
+    const updated = StoreService.updateActiveProfileForUser(req.body, user);
+    const profiles = StoreService.getProfilesForUser(user);
     res.json({ success: true, profile: updated, profiles });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -32,24 +44,22 @@ profileRouter.put('/', (req, res) => {
 // Select active profile
 profileRouter.post('/select', async (req, res) => {
   try {
+    const user = getReqUser(req);
     const { profileId } = req.body;
     if (!profileId) {
       return res.status(400).json({ success: false, error: 'profileId is required' });
     }
 
-    const switched = StoreService.setActiveProfile(profileId);
+    const switched = StoreService.setActiveProfileForUser(profileId, user);
     if (!switched) {
-      return res.status(404).json({ success: false, error: 'Profile not found' });
+      return res.status(404).json({ success: false, error: 'Profile not found for your account' });
     }
-
-    // Automatically re-score jobs according to this newly selected profile
-    await AutomationService.executeDailyHarvest();
 
     res.json({
       success: true,
       message: `Active profile switched to "${switched.profileName}"`,
       profile: switched,
-      profiles: StoreService.getProfiles()
+      profiles: StoreService.getProfilesForUser(user)
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -59,15 +69,16 @@ profileRouter.post('/select', async (req, res) => {
 // Delete a profile
 profileRouter.delete('/:id', (req, res) => {
   try {
+    const user = getReqUser(req);
     const { id } = req.params;
-    const deleted = StoreService.deleteProfile(id);
+    const deleted = StoreService.deleteProfileForUser(id, user);
     if (!deleted) {
-      return res.status(400).json({ success: false, error: 'Cannot delete the only profile' });
+      return res.status(400).json({ success: false, error: 'Cannot delete the only profile or unauthorized' });
     }
     res.json({
       success: true,
-      profile: StoreService.getActiveProfile(),
-      profiles: StoreService.getProfiles()
+      profile: StoreService.getActiveProfileForUser(user),
+      profiles: StoreService.getProfilesForUser(user)
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -160,13 +171,14 @@ profileRouter.post('/upload-resume', async (req, res) => {
 
     const finalProfileName = profileName || (fileName ? `${extractedName} - ${fileName.replace(/\.[^.]+$/, '')}` : `${extractedName} - Resume`);
 
-    const newProfile = StoreService.createProfile({
+    const user = getReqUser(req);
+    const newProfile = StoreService.createProfileForUser({
       profileName: finalProfileName,
       fileName: fileName || 'Uploaded_Resume.pdf',
       filePath: savedPath,
       name: extractedName,
-      email: extractedEmail,
-      phone: extractedPhone,
+      email: extractedEmail || user?.email || '',
+      phone: extractedPhone || user?.phone || '',
       location: extractedLocation,
       targetRoles: ['Software Engineer', 'Full Stack Developer', 'Frontend Developer (React / TypeScript)'],
       coreSkills: Array.from(detectedSkills),
@@ -181,16 +193,13 @@ profileRouter.post('/upload-resume', async (req, res) => {
       experienceLevel: expLevel,
       preferredWorkplace: 'all',
       preferredLocation: 'Nearby / Delhi-NCR'
-    });
-
-    // Re-harvest and score for this new profile
-    await AutomationService.executeDailyHarvest();
+    }, user);
 
     res.json({
       success: true,
       message: `Profile "${newProfile.profileName}" created and activated!`,
       profile: newProfile,
-      profiles: StoreService.getProfiles()
+      profiles: StoreService.getProfilesForUser(user)
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

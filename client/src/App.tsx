@@ -125,7 +125,11 @@ export const App: React.FC = () => {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('jobhunter_auth_token');
-    if (!token) return;
+    if (!token) {
+      delete axios.defaults.headers.common['Authorization'];
+      return;
+    }
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     try {
       const res = await axios.get('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
@@ -135,11 +139,16 @@ export const App: React.FC = () => {
       }
     } catch {
       localStorage.removeItem('jobhunter_auth_token');
+      delete axios.defaults.headers.common['Authorization'];
       setCurrentUser(null);
     }
   };
 
   const handleLoginSuccess = (user: UserAccount) => {
+    const token = localStorage.getItem('jobhunter_auth_token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
     setCurrentUser(user);
     showToast(`Welcome back, ${user.name}!`);
     loadData();
@@ -147,8 +156,11 @@ export const App: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('jobhunter_auth_token');
+    delete axios.defaults.headers.common['Authorization'];
     setCurrentUser(null);
-    showToast('Logged out of session');
+    setProfiles([]);
+    showToast('Logged out — switched to Guest Mode');
+    loadData();
   };
 
   const loadData = async () => {
@@ -178,8 +190,11 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
-    checkAuth();
+    const token = localStorage.getItem('jobhunter_auth_token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+    checkAuth().then(() => loadData());
   }, []);
 
   const handleRefresh = async () => {

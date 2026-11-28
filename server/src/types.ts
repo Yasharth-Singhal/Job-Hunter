@@ -277,6 +277,8 @@ export interface Gig {
 
 export interface ResumeProfile {
   id: string;
+  ownerId?: string;
+  ownerEmail?: string;
   profileName: string;
   fileName: string;
   filePath: string;
