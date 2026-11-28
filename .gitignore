@@ -23,6 +23,8 @@ yarn-error.log*
 data/
 data/storage.json
 data/resumes/
+scripts/notifyMobile.js
+.agents/
 
 # Editor & OS files
 .DS_Store

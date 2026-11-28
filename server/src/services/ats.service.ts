@@ -85,8 +85,8 @@ export class AtsService {
     { name: 'Canonical', slug: 'canonical', domain: 'canonical.com', salary: '₹18 - 32 LPA ($95,000 - $140,000)' },
     { name: 'GitHub', slug: 'github', domain: 'github.com', salary: '₹25 - 40 LPA ($120,000 - $170,000)' },
     { name: 'Datadog', slug: 'datadog', domain: 'datadoghq.com', salary: '₹24 - 38 LPA ($115,000 - $165,000)' },
-    { name: 'Postman', slug: 'postman', domain: 'postman.com', salary: '₹20 - 35 LPA ($105,000 - $150,000)' },
-    { name: 'Razorpay', slug: 'razorpay', domain: 'razorpay.com', salary: '₹18 - 32 LPA ($90,000 - $135,000)' },
+    { name: 'Postman', slug: 'postman', domain: 'postman.com', salary: '₹20 - 35 LPA' },
+    { name: 'Razorpay', slug: 'razorpay', domain: 'razorpay.com', salary: '₹18 - 32 LPA' },
     { name: 'MongoDB', slug: 'mongodb', domain: 'mongodb.com', salary: '₹22 - 36 LPA ($110,000 - $155,000)' },
     { name: 'Docker', slug: 'docker', domain: 'docker.com', salary: '₹22 - 35 LPA ($110,000 - $150,000)' }
   ];
@@ -284,8 +284,94 @@ export class AtsService {
     }
   }
 
+  public static async fetchLivePublicPortals(): Promise<Job[]> {
+    const liveJobs: Job[] = [];
+
+    const [remotiveRes, arbeitnowRes] = await Promise.allSettled([
+      axios.get<{ jobs: any[] }>('https://remotive.com/api/remote-jobs?category=software-dev&limit=25', { timeout: 6000 }),
+      axios.get<{ data: any[] }>('https://www.arbeitnow.com/api/job-board-api', { timeout: 6000 })
+    ]);
+
+    if (remotiveRes.status === 'fulfilled') {
+      const raw = remotiveRes.value.data?.jobs || [];
+      for (const j of raw) {
+        const loc = j.candidate_required_location || 'Remote Worldwide';
+        const isIndiaOrGlobal = /worldwide|anywhere|india|apac|global|remote/i.test(loc);
+        liveJobs.push({
+          id: `remotive_job_${j.id}`,
+          title: j.title,
+          company: j.company_name,
+          companyDomain: `${j.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          location: loc,
+          city: isIndiaOrGlobal ? 'Remote' : loc.split(',')[0].trim(),
+          isRemote: true,
+          workplaceType: 'remote',
+          experienceLevel: detectExperienceTier(j.title),
+          type: 'full-time',
+          source: 'greenhouse',
+          directApplyUrl: j.url,
+          descriptionSnippet: (j.description || '').replace(/<[^>]*>/g, '').slice(0, 180).trim() + '...',
+          fullDescription: (j.description || '').replace(/<[^>]*>/g, '').slice(0, 1200),
+          responsibilities: [
+            'Collaborate with distributed engineering teams to ship production features.',
+            'Write clean, maintainable, and well-tested application code.'
+          ],
+          requirements: Array.isArray(j.tags) && j.tags.length > 0 ? j.tags.slice(0, 5) : ['React', 'TypeScript', 'Node.js'],
+          salary: j.salary || '₹18 - 34 LPA (Global Remote)',
+          department: j.category || 'Software Engineering',
+          benefits: ['100% Remote / Asynchronous Work', 'Flexible Working Hours', 'Global Compensation'],
+          postedAt: j.publication_date ? new Date(j.publication_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Live Today',
+          matchScore: 0,
+          matchReasons: [],
+          hiringTeam: buildHiringIntel(j.company_name, j.title, `${j.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`),
+          category: 'core-career',
+          isVerifiedDirect: true
+        });
+      }
+    }
+
+    if (arbeitnowRes.status === 'fulfilled') {
+      const raw = (arbeitnowRes.value.data?.data || []).slice(0, 20);
+      for (const j of raw) {
+        const loc = j.location || (j.remote ? 'Remote' : 'Global');
+        liveJobs.push({
+          id: `arbeitnow_job_${j.slug}`,
+          title: j.title,
+          company: j.company_name,
+          companyDomain: `${j.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+          location: j.remote ? `Remote (${loc})` : loc,
+          city: j.remote ? 'Remote' : extractCity(loc),
+          isRemote: Boolean(j.remote),
+          workplaceType: j.remote ? 'remote' : 'onsite',
+          experienceLevel: detectExperienceTier(j.title),
+          type: 'full-time',
+          source: 'lever',
+          directApplyUrl: j.url,
+          descriptionSnippet: (j.description || '').replace(/<[^>]*>/g, '').slice(0, 180).trim() + '...',
+          fullDescription: (j.description || '').replace(/<[^>]*>/g, '').slice(0, 1200),
+          responsibilities: [
+            'Architect scalable frontend and backend systems.',
+            'Collaborate with product managers and designers.'
+          ],
+          requirements: Array.isArray(j.tags) && j.tags.length > 0 ? j.tags.slice(0, 5) : ['JavaScript', 'TypeScript', 'Full Stack'],
+          salary: 'Competitive Market Package',
+          department: 'Engineering',
+          benefits: ['Direct Company Portal', 'Modern Engineering Stack'],
+          postedAt: j.created_at ? new Date(j.created_at * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Live Today',
+          matchScore: 0,
+          matchReasons: [],
+          hiringTeam: buildHiringIntel(j.company_name, j.title, `${j.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`),
+          category: 'core-career',
+          isVerifiedDirect: true
+        });
+      }
+    }
+
+    return liveJobs;
+  }
+
   public static async harvestAllAtsJobs(): Promise<Job[]> {
-    const promises: Promise<Job[]>[] = [];
+    const promises: Promise<Job[]>[] = [this.fetchLivePublicPortals()];
 
     for (const c of this.GREENHOUSE_COMPANIES) {
       promises.push(this.fetchGreenhouseJobs(c));

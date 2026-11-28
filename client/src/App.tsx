@@ -526,7 +526,7 @@ export const App: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-950 text-zinc-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-100 text-zinc-900 font-semibold text-xs shadow-2xl border border-zinc-300 animate-in fade-in slide-in-from-bottom-3 duration-200">

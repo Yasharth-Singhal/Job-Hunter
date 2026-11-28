@@ -37,7 +37,7 @@ export class MncService {
       company: 'Google',
       domain: 'google.com',
       portalUrl: 'https://www.google.com/about/careers/applications/jobs/results',
-      salary: '₹24 - 42 LPA ($115,000 - $170,000)',
+      salary: '₹24 - 42 LPA',
       roles: [
         {
           title: 'Software Engineer, Early Career / University Graduate',
@@ -87,7 +87,7 @@ export class MncService {
       company: 'Microsoft',
       domain: 'microsoft.com',
       portalUrl: 'https://careers.microsoft.com',
-      salary: '₹22 - 38 LPA ($110,000 - $160,000)',
+      salary: '₹22 - 38 LPA',
       roles: [
         {
           title: 'Software Engineer (Frontend / React / TypeScript)',
@@ -137,7 +137,7 @@ export class MncService {
       company: 'Amazon',
       domain: 'amazon.com',
       portalUrl: 'https://www.amazon.jobs',
-      salary: '₹22 - 40 LPA ($110,000 - $165,000)',
+      salary: '₹22 - 40 LPA',
       roles: [
         {
           title: 'Software Development Engineer I (SDE 1)',
@@ -291,10 +291,118 @@ export class MncService {
             'Coordinate with cross-geography engineering pods and product stakeholders.',
             'Participate in code reviews and automated testing automation.'
           ],
-          requirements: [
+            requirements: [
             'Hands-on experience with React, TypeScript, Redux, and Node.js.',
             'Familiarity with SQL / NoSQL database design and RESTful endpoints.',
             'High adaptability to evolving project requirements in agile sprints.'
+          ]
+        }
+      ]
+    },
+    {
+      company: 'Flipkart',
+      domain: 'flipkart.com',
+      portalUrl: 'https://www.flipkartcareers.com',
+      salary: '₹18 - 32 LPA',
+      roles: [
+        {
+          title: 'SDE-1 (UI / Frontend & Full Stack)',
+          location: 'Bengaluru / Hybrid India',
+          city: 'Bengaluru',
+          workplaceType: 'hybrid',
+          experienceLevel: 'junior',
+          department: 'Consumer Engineering',
+          url: 'https://www.flipkartcareers.com/#!/joblist',
+          type: 'full-time',
+          snippet: 'Build ultra-fast mobile & web e-commerce experiences handling Big Billion Days scale.',
+          responsibilities: [
+            'Develop high-throughput React/Next.js web storefronts and checkout flows.',
+            'Optimize bundle loading and edge caching for low-bandwidth devices.'
+          ],
+          requirements: [
+            'Strong JavaScript, TypeScript, React.js, and Node.js skills.',
+            'Experience with performance optimization and scalable UI state.'
+          ]
+        }
+      ]
+    },
+    {
+      company: 'Swiggy',
+      domain: 'swiggy.in',
+      portalUrl: 'https://careers.swiggy.com',
+      salary: '₹16 - 28 LPA',
+      roles: [
+        {
+          title: 'Software Development Engineer I (Full Stack / MERN)',
+          location: 'Bengaluru / Remote Friendly India',
+          city: 'Bengaluru',
+          workplaceType: 'remote',
+          experienceLevel: 'junior',
+          department: 'Storefront & Delivery',
+          url: 'https://careers.swiggy.com/#/careers',
+          type: 'full-time',
+          snippet: 'Build real-time order tracking dashboards, Instamart web surfaces, and partner portals.',
+          responsibilities: [
+            'Ship customer-facing React/Next.js web interfaces and Node.js APIs.',
+            'Collaborate with product and design on rapid growth experiments.'
+          ],
+          requirements: [
+            '1+ years building production React, TypeScript, and Node.js applications.',
+            'Strong fundamentals in REST APIs, Redis, and SQL/NoSQL.'
+          ]
+        }
+      ]
+    },
+    {
+      company: 'PhonePe',
+      domain: 'phonepe.com',
+      portalUrl: 'https://www.phonepe.com/careers/',
+      salary: '₹18 - 30 LPA',
+      roles: [
+        {
+          title: 'Software Engineer - Web & Merchant Dashboards',
+          location: 'Bengaluru / Pune / Delhi-NCR',
+          city: 'Bengaluru',
+          workplaceType: 'hybrid',
+          experienceLevel: 'junior',
+          department: 'Merchant Tech',
+          url: 'https://www.phonepe.com/careers/',
+          type: 'full-time',
+          snippet: 'Engineer reliable, high-security payment dashboards serving 40M+ Indian merchants.',
+          responsibilities: [
+            'Build high-reliability React + TypeScript dashboards and settlement portals.',
+            'Ensure strict security, authentication, and zero-downtime deployments.'
+          ],
+          requirements: [
+            'Proficiency in React, TypeScript, modern CSS, and backend APIs.',
+            'Strong debugging and problem-solving skills.'
+          ]
+        }
+      ]
+    },
+    {
+      company: 'Zoho',
+      domain: 'zoho.com',
+      portalUrl: 'https://www.zoho.com/careers/',
+      salary: '₹8.5 - 16 LPA',
+      roles: [
+        {
+          title: 'Software Developer (Full Stack / Web)',
+          location: 'Chennai / Tenkasi / Hybrid India',
+          city: 'Chennai',
+          workplaceType: 'hybrid',
+          experienceLevel: 'fresher',
+          department: 'Zoho SaaS Suite',
+          url: 'https://www.zoho.com/careers/',
+          type: 'full-time',
+          snippet: 'Craft clean, zero-bloat web applications powering 100M+ global business users.',
+          responsibilities: [
+            'Build fast, responsive web modules in JavaScript, React, and backend services.',
+            'Write clean, maintainable code with strong attention to performance.'
+          ],
+          requirements: [
+            'Strong core programming in JavaScript/TypeScript, Java/Node.js, and SQL.',
+            'Passion for building end-to-end SaaS products.'
           ]
         }
       ]

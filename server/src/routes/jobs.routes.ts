@@ -7,7 +7,12 @@ export const jobsRouter = Router();
 jobsRouter.get('/', async (req, res) => {
   try {
     let jobs = StoreService.getCachedJobs();
-    if (jobs.length === 0) {
+    const auto = StoreService.getAutomation();
+    const lastRunDate = auto?.lastRun ? new Date(auto.lastRun).toDateString() : '';
+    const todayDate = new Date().toDateString();
+
+    // Auto-refresh if cache is empty OR stale from a previous day
+    if (jobs.length === 0 || (lastRunDate && lastRunDate !== todayDate)) {
       await AutomationService.executeDailyHarvest();
       jobs = StoreService.getCachedJobs();
     }
